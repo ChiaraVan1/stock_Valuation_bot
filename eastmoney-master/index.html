@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>东方财富研报下载工具 | EastMoney Reports Downloader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-green: #3fb950;
+            --accent-blue: #58a6ff;
+            --accent-purple: #a371f7;
+            --accent-orange: #f0883e;
+            --border-color: #30363d;
+            --code-bg: #1c2128;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* 渐变背景 */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(88, 166, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(163, 113, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(63, 185, 80, 0.05) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        header {
+            padding: 60px 0 40px;
+            text-align: center;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-top: 8px;
+        }
+
+        /* Badge */
+        .badges {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Agent Section */
+        .agent-section {
+            margin: 50px 0;
+            animation: fadeIn 0.8s ease-out 0.3s both;
+        }
+        
+        .agent-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 32px;
+            margin-top: 24px;
+        }
+        
+        .agent-intro {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .agent-intro h3 {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            color: var(--accent-blue);
+        }
+        
+        .agent-intro p {
+            color: var(--text-secondary);
+        }
+        
+        /* 特性卡片 */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 40px 0;
+            animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Terminal */
+        .terminal-section {
+            margin: 50px 0;
+            animation: fadeIn 0.8s ease-out 0.4s both;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .terminal {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: var(--bg-tertiary);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+
+        .terminal-title {
+            margin-left: 12px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+
+        .command-block {
+            margin-bottom: 20px;
+        }
+
+        .command-label {
+            color: var(--accent-purple);
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+        }
+
+        .command {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 14px;
+            border-radius: 6px;
+            color: var(--accent-green);
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .command-comment {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 4px;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        .command-result {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            padding-left: 14px;
+        }
+
+        /* 快速入门 */
+        .quickstart {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 32px;
+            margin: 40px 0;
+            animation: fadeIn 0.8s ease-out 0.6s both;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            align-items: flex-start;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            margin-bottom: 6px;
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .step-code {
+            background: var(--code-bg);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-green);
+            margin-top: 10px;
+        }
+
+        /* 用例 */
+        .usecases {
+            margin: 50px 0;
+            animation: fadeIn 0.8s ease-out 0.8s both;
+        }
+
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .usecase-card:hover {
+            border-color: var(--accent-orange);
+        }
+
+        .usecase-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .usecase-title .icon {
+            font-size: 1.2rem;
+        }
+
+        .usecase-command {
+            background: var(--code-bg);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-green);
+            margin-bottom: 10px;
+        }
+
+        .usecase-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* 页脚 */
+        footer {
+            text-align: center;
+            padding: 60px 0;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            margin-top: 60px;
+            animation: fadeIn 0.8s ease-out 1s both;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .footer-links a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-purple);
+        }
+
+        /* 响应式 */
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .container {
+                padding: 0 16px;
+            }
+            
+            .terminal-body {
+                font-size: 0.8rem;
+                padding: 14px;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+    <body>
+    <div class="bg-gradient"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">EM</div>
+                <h1>Eastmoney Reports Tool</h1>
+            </div>
+            <p class="tagline">Query and download research reports via CLI & MCP</p>
+            
+            <div class="badges">
+                <span class="badge">🤖 MCP Server</span>
+                <span class="badge">🖥️ CLI Tool</span>
+                <span class="badge">📥 PDF/CSV</span>
+                <span class="badge">🐍 Python</span>
+            </div>
+        </header>
+
+        <!-- MCP for AI Agents -->
+        <section class="agent-section">
+            <h2 class="section-title">
+                <span>🤖</span> Use with AI Agents
+            </h2>
+            
+            <div class="agent-content">
+                <div class="agent-intro">
+                    <h3>One-command install for agents</h3>
+                    <p>Supports Claude Desktop, Cursor, Cline, and any MCP-compatible AI tool.</p>
+                </div>
+                
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <span class="terminal-dot dot-red"></span>
+                        <span class="terminal-dot dot-yellow"></span>
+                        <span class="terminal-dot dot-green"></span>
+                        <span class="terminal-title">MCP Server Quick Start</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="command-block">
+                            <div class="command-label">① Install package</div>
+                            <div class="command">pip install eastmoney-reports</div>
+                        </div>
+                        
+                        <div class="command-block">
+                            <div class="command-label">② Add to MCP config (e.g., claude_desktop_config.json)</div>
+                            <div class="command">{ "mcpServers": { "eastmoney": { "command": "eastmoney-mcp" } } }</div>
+                        </div>
+                        
+                        <div class="command-block">
+                            <div class="command-label">③ Start using in your AI agent</div>
+                            <div class="command">eastmoney-mcp</div>
+                            <div class="command-comment"># Or use via prompt: "Query reports for gaming industry (code 1046)"</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 特性 -->
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <div class="feature-title">查询研报</div>
+                <div class="feature-desc">快速查找行业、策略、个股等各类研报</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📥</div>
+                <div class="feature-title">下载PDF</div>
+                <div class="feature-desc">一键批量下载研报PDF到本地</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">导出数据</div>
+                <div class="feature-desc">导出为CSV，Excel打开直接看</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <div class="feature-title">搜索行业</div>
+                <div class="feature-desc">按行业、股票代码精准筛选</div>
+            </div>
+        </section>
+
+        <!-- 终端演示 -->
+        <section class="terminal-section">
+            <h2 class="section-title">
+                <span>💻</span> CLI Quick Start
+            </h2>
+            
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot dot-red"></span>
+                    <span class="terminal-dot dot-yellow"></span>
+                    <span class="terminal-dot dot-green"></span>
+                    <span class="terminal-title">Terminal</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="command-block">
+                        <div class="command-label">Install</div>
+                        <div class="command">pip install eastmoney-reports</div>
+                    </div>
+                    
+                    <div class="command-block">
+                        <div class="command-label">List industries</div>
+                        <div class="command">eastmoney list</div>
+                    </div>
+                    
+                    <div class="command-block">
+                        <div class="command-label">Query reports</div>
+                        <div class="command">eastmoney query -i 1046 -s 5</div>
+                        <div class="command-comment"># Gaming industry, 5 reports</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 快速入门 -->
+        <section class="quickstart">
+            <h2 class="section-title" style="margin-bottom: 32px;">
+                <span>🚀</span> Quick Start
+            </h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Install</h3>
+                    <div class="step-code">pip install eastmoney-reports</div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>List industries</h3>
+                    <div class="step-code">eastmoney list</div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Query reports</h3>
+                    <div class="step-code">eastmoney query -i 1046 -s 5</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 常见场景 -->
+        <section class="usecases">
+            <h2 class="section-title">
+                <span>💡</span> Examples
+            </h2>
+            
+            <div class="usecase-grid">
+                <div class="usecase-card">
+                    <div class="usecase-title">
+                        <span class="icon">🎮</span> Gaming Reports
+                    </div>
+                    <div class="usecase-command">eastmoney query -i 1046 -s 10</div>
+                </div>
+                
+                <div class="usecase-card">
+                    <div class="usecase-title">
+                        <span class="icon">📈</span> Strategy Reports
+                    </div>
+                    <div class="usecase-command">eastmoney query -t strategy -s 5</div>
+                </div>
+                
+                <div class="usecase-card">
+                    <div class="usecase-title">
+                        <span class="icon">🍷</span> Stock Reports
+                    </div>
+                    <div class="usecase-command">eastmoney query -t stock -c 600519</div>
+                </div>
+                
+                <div class="usecase-card">
+                    <div class="usecase-title">
+                        <span class="icon">📥</span> Download PDF
+                    </div>
+                    <div class="usecase-command">eastmoney download -i 1046 -s 3 -o ./reports</div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-links">
+                <a href="https://github.com/manymore13/eastmoney">GitHub</a>
+                <a href="https://github.com/manymore13/eastmoney/issues">问题反馈</a>
+            </div>
+            <p>让研报下载更简单 ✨</p>
+        </footer>
+    </div>
+</body>
+</html>

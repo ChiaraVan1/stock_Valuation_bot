@@ -1,0 +1,257 @@
+[
+  {
+    "industry_name": "光伏设备",
+    "industry_code": "1031",
+    "page_size": 100
+  },
+  {
+    "industry_name": "风电设备",
+    "industry_code": "1032",
+    "page_size": 100
+  },
+  {
+    "industry_name": "电池",
+    "industry_code": "1033",
+    "page_size": 100
+  },
+  {
+    "industry_name": "其他电源设备Ⅱ",
+    "industry_code": "1034",
+    "page_size": 100
+  },
+  {
+    "industry_name": "半导体",
+    "industry_code": "1036",
+    "page_size": 100
+  },
+  {
+    "industry_name": "消费电子",
+    "industry_code": "1037",
+    "page_size": 100
+  },
+  {
+    "industry_name": "光学光电子",
+    "industry_code": "1038",
+    "page_size": 100
+  },
+  {
+    "industry_name": "中药Ⅱ",
+    "industry_code": "1040",
+    "page_size": 100
+  },
+  {
+    "industry_name": "医药商业",
+    "industry_code": "1042",
+    "page_size": 100
+  },
+  {
+    "industry_name": "生物制品",
+    "industry_code": "1044",
+    "page_size": 100
+  },
+  {
+    "industry_name": "房地产服务",
+    "industry_code": "1045",
+    "page_size": 100
+  },
+  {
+    "industry_name": "游戏Ⅱ",
+    "industry_code": "1046",
+    "page_size": 100
+  },
+  {
+    "industry_name": "服装家纺",
+    "industry_code": "1225",
+    "page_size": 100
+  },
+  {
+    "industry_name": "航空装备Ⅱ",
+    "industry_code": "1231",
+    "page_size": 100
+  },
+  {
+    "industry_name": "航天装备Ⅱ",
+    "industry_code": "1232",
+    "page_size": 100
+  },
+  {
+    "industry_name": "IT服务Ⅱ",
+    "industry_code": "1238",
+    "page_size": 100
+  },
+  {
+    "industry_name": "白色家电",
+    "industry_code": "1239",
+    "page_size": 100
+  },
+  {
+    "industry_name": "黑色家电",
+    "industry_code": "1241",
+    "page_size": 100
+  },
+  {
+    "industry_name": "煤炭开采",
+    "industry_code": "1250",
+    "page_size": 100
+  },
+  {
+    "industry_name": "化妆品",
+    "industry_code": "1252",
+    "page_size": 100
+  },
+  {
+    "industry_name": "医疗美容",
+    "industry_code": "1253",
+    "page_size": 100
+  },
+  {
+    "industry_name": "农业综合Ⅱ",
+    "industry_code": "1257",
+    "page_size": 100
+  },
+  {
+    "industry_name": "饲料",
+    "industry_code": "1258",
+    "page_size": 100
+  },
+  {
+    "industry_name": "养殖业",
+    "industry_code": "1259",
+    "page_size": 100
+  },
+  {
+    "industry_name": "摩托车及其他",
+    "industry_code": "1263",
+    "page_size": 100
+  },
+  {
+    "industry_name": "造纸",
+    "industry_code": "1267",
+    "page_size": 100
+  },
+  {
+    "industry_name": "酒店餐饮",
+    "industry_code": "1271",
+    "page_size": 100
+  },
+  {
+    "industry_name": "白酒Ⅱ",
+    "industry_code": "1277",
+    "page_size": 100
+  },
+  {
+    "industry_name": "食品加工",
+    "industry_code": "1280",
+    "page_size": 100
+  },
+  {
+    "industry_name": "休闲食品",
+    "industry_code": "1281",
+    "page_size": 100
+  },
+  {
+    "industry_name": "饮料乳品",
+    "industry_code": "1282",
+    "page_size": 100
+  },
+  {
+    "industry_name": "工业金属",
+    "industry_code": "1287",
+    "page_size": 100
+  },
+  {
+    "industry_name": "物流",
+    "industry_code": "422",
+    "page_size": 100
+  },
+  {
+    "industry_name": "电力",
+    "industry_code": "428",
+    "page_size": 100
+  },
+  {
+    "industry_name": "通信设备",
+    "industry_code": "448",
+    "page_size": 100
+  },
+  {
+    "industry_name": "房地产开发",
+    "industry_code": "451",
+    "page_size": 100
+  },
+  {
+    "industry_name": "电网设备",
+    "industry_code": "457",
+    "page_size": 100
+  },
+  {
+    "industry_name": "元件",
+    "industry_code": "459",
+    "page_size": 100
+  },
+  {
+    "industry_name": "化学制药",
+    "industry_code": "465",
+    "page_size": 100
+  },
+  {
+    "industry_name": "证券Ⅱ",
+    "industry_code": "473",
+    "page_size": 100
+  },
+  {
+    "industry_name": "保险Ⅱ",
+    "industry_code": "474",
+    "page_size": 100
+  },
+  {
+    "industry_name": "银行Ⅱ",
+    "industry_code": "475",
+    "page_size": 100
+  },
+  {
+    "industry_name": "汽车零部件",
+    "industry_code": "481",
+    "page_size": 100
+  },
+  {
+    "industry_name": "一般零售",
+    "industry_code": "482",
+    "page_size": 100
+  },
+  {
+    "industry_name": "化学制品",
+    "industry_code": "538",
+    "page_size": 100
+  },
+  {
+    "industry_name": "通用设备",
+    "industry_code": "545",
+    "page_size": 100
+  },
+  {
+    "industry_name": "医疗服务",
+    "industry_code": "727",
+    "page_size": 100
+  },
+  {
+    "industry_name": "通信服务",
+    "industry_code": "736",
+    "page_size": 100
+  },
+  {
+    "industry_name": "软件开发",
+    "industry_code": "737",
+    "page_size": 100
+  },
+  {
+    "industry_name": "多元金融",
+    "industry_code": "738",
+    "page_size": 100
+  },
+  {
+    "industry_name": "专用设备",
+    "industry_code": "910",
+    "page_size": 100
+  }
+]

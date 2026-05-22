@@ -1,0 +1,4 @@
+[console_scripts]
+eastmoney = eastmoney.cli:main
+eastmoney-mcp = eastmoney.mcp_server:main
+report = eastmoney.cli:main
