@@ -308,7 +308,7 @@ def run_valuation(code: str, stock_name: str, report_year: str,
             "type": "text",
             "text": f"""标的：{stock_name}（{code}）
 报告期：{report_year}年报
-当前股价：{price} 元
+当前股价：{"请从截图中读取" if not price else price + " 元"}
 
 以下是我上传的所有截图，包含：资产负债表、利润表、近10年归母净利润、历年分红记录、分产品营收毛利率、总股本等信息。
 请自行识别每张截图的内容，提取所需数据。
@@ -350,7 +350,7 @@ def main():
     parser.add_argument("--code", required=True, help="股票代码，如 002223")
     parser.add_argument("--name", required=True, help="股票名称，如 鱼跃医疗")
     parser.add_argument("--year", required=True, help="报告年度，如 2025")
-    parser.add_argument("--price", required=True, help="当前股价，如 29.08")
+    parser.add_argument("--price", required=False, default="", help="当前股价，如 29.08（可不填，从截图自动读取）")
     parser.add_argument("--months", type=int, default=12, help="查询研报月数")
     parser.add_argument("--max-reports", type=int, default=10, help="最多分析研报数")
     args = parser.parse_args()
