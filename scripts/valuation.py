@@ -252,9 +252,10 @@ Fallback 触发规则：
 
 
 def get_deepseek_client():
-    if not DEEPSEEK_API_KEY:
-        raise ValueError("DEEPSEEK_API_KEY 未设置")
-    return OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+    api_key = DEEPSEEK_API_KEY
+    base_url = os.environ.get("DEEPSEEK_BASE_URL", 
+                   "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    return OpenAI(api_key=api_key, base_url=base_url)
 
 
 def get_qwen_client():
@@ -293,7 +294,7 @@ def extract_images_with_qwen(code: str, name: str = "") -> str:
         media_type = f"image/{'jpeg' if ext == 'jpg' else ext}"
 
         resp = client.chat.completions.create(
-            model="qwen-vl-plus",
+            model="qwen-vl-ocr-latest",
             max_tokens=1500,
             messages=[
                 {
