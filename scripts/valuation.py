@@ -252,10 +252,26 @@ Fallback 触发规则：
 
 
 def get_deepseek_client():
-    api_key = DEEPSEEK_API_KEY
-    base_url = os.environ.get("DEEPSEEK_BASE_URL", 
-                   "https://dashscope.aliyuncs.com/compatible-mode/v1")
-    return OpenAI(api_key=api_key, base_url=base_url)
+    # 先试阿里云
+    try:
+        client = OpenAI(
+            api_key=os.environ.get("QWEN_API_KEY", ""),
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+        )
+        # 测试一下是否可用
+        client.chat.completions.create(
+            model="deepseek-v3",
+            max_tokens=1,
+            messages=[{"role": "user", "content": "hi"}]
+        )
+        print("✅ 使用阿里云DeepSeek额度")
+        return client
+    except Exception as e:
+        print(f"⚠️ 阿里云额度不可用({e})，切换到DeepSeek官方")
+        return OpenAI(
+            api_key=os.environ.get("DEEPSEEK_API_KEY", ""),
+            base_url="https://api.deepseek.com"
+        )
 
 
 def get_qwen_client():
