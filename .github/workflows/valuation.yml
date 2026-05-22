@@ -48,6 +48,7 @@ jobs:
       - name: 运行双轨估值
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
         run: |
           python scripts/valuation.py \
             --code ${{ github.event.inputs.stock_code }} \
