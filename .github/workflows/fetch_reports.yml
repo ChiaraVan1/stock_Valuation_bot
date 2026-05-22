@@ -1,0 +1,56 @@
+name: 研报估值倍数提取
+
+on:
+  workflow_dispatch:
+    inputs:
+      stock_code:
+        description: '股票代码（如 000001）'
+        required: true
+        type: string
+      months:
+        description: '查询近几个月研报'
+        required: false
+        default: '12'
+        type: string
+      max_reports:
+        description: '最多分析几篇研报'
+        required: false
+        default: '10'
+        type: string
+
+jobs:
+  extract-valuation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 签出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行提取脚本
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python scripts/fetch_and_extract.py \
+            --code ${{ github.event.inputs.stock_code }} \
+            --months ${{ github.event.inputs.months }} \
+            --max-reports ${{ github.event.inputs.max_reports }}
+
+      - name: 上传结果文件
+        uses: actions/upload-artifact@v4
+        with:
+          name: valuation-${{ github.event.inputs.stock_code }}-${{ github.run_id }}
+          path: output/
+          retention-days: 30
+
+      - name: 输出结果预览
+        run: |
+          cat output/${{ github.event.inputs.stock_code }}_valuation.md
