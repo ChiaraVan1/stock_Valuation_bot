@@ -372,5 +372,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-SCRIPT
-echo "脚本写入完成"
