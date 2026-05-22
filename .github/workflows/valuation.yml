@@ -54,7 +54,6 @@ jobs:
             --code ${{ github.event.inputs.stock_code }} \
             --name "${{ github.event.inputs.stock_name }}" \
             --year ${{ github.event.inputs.report_year }} \
-            --price ${{ github.event.inputs.current_price }} \
             --months ${{ github.event.inputs.months }}
 
       - name: 上传估值报告
