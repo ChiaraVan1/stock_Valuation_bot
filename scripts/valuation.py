@@ -326,6 +326,168 @@ def extract_images_with_qwen(code: str, name: str = "") -> str:
     return result
 
 
+
+OCR_VALIDATE_PROMPT = """以下是从财务截图中提取的原始文字数据。
+请从中找出以下关键数字，只输出JSON，不输出任何其他文字。
+若某字段找不到，填 null。
+
+输出格式：
+{
+  "total_assets": 数字（亿元），
+  "total_liabilities": 数字（亿元），
+  "total_equity": 数字（亿元），
+  "parent_equity": 数字（亿元，归属于母公司所有者权益合计）,
+  "minority_equity": 数字（亿元，少数股东权益）,
+  "net_profit_consolidated": 数字（亿元，合并利润表归属于母公司的净利润）,
+  "net_profit_parent": 数字（亿元，母公司利润表净利润，如有）,
+  "total_shares": 数字（亿股）
+}
+
+注意：
+- total_liabilities 通常远小于 total_assets，约为 total_assets 的 10%-40%
+- net_profit_consolidated 是合并报表数字
+- 若发现 net_profit_parent 与 net_profit_consolidated 差异超过30%，务必两个都填，不要混用
+
+原始数据：
+"""
+
+
+def validate_ocr_data(financial_data: str, client) -> dict:
+    """Step1.5: 用DeepSeek结构化关键数字并执行恒等式校验，捕获OCR读错。"""
+    print("\n--- Step1.5: OCR数据校验 ---")
+
+    resp = client.chat.completions.create(
+        model="deepseek-chat",
+        max_tokens=400,
+        temperature=0,
+        messages=[
+            {"role": "system", "content": "只输出JSON，不输出任何其他文字。"},
+            {"role": "user", "content": OCR_VALIDATE_PROMPT + financial_data[:8000]}
+        ]
+    )
+    raw = resp.choices[0].message.content.strip()
+    raw = raw.replace("```json", "").replace("```", "").strip()
+
+    try:
+        data = json.loads(raw)
+    except Exception as e:
+        print(f"  结构化提取失败: {e}，跳过校验")
+        return {"errors": [], "warnings": [], "extracted": {}}
+
+    errors = []
+    warnings = []
+    ta = data.get("total_assets")
+    tl = data.get("total_liabilities")
+    te = data.get("total_equity")
+    pe = data.get("parent_equity")
+    me = data.get("minority_equity")
+    np_c = data.get("net_profit_consolidated")
+    np_p = data.get("net_profit_parent")
+
+    # 校验1：资产负债表恒等式
+    if ta and tl and te:
+        diff = abs(ta - tl - te)
+        if diff > ta * 0.01:
+            errors.append(
+                f"资产负债表恒等式不成立：总资产({ta:.2f}亿) ≠ 负债({tl:.2f}亿) + 权益({te:.2f}亿)，"
+                f"差额{diff:.2f}亿，可能OCR读错负债或权益"
+            )
+        else:
+            print(f"  ✓ 恒等式通过：{ta:.2f} = {tl:.2f} + {te:.2f}")
+
+    # 校验2：归母净利润不得超过归母净资产
+    if np_c and pe:
+        if np_c > pe:
+            errors.append(
+                f"归母净利润({np_c:.2f}亿) > 归母净资产({pe:.2f}亿)，"
+                f"可能误用母公司口径或OCR读错"
+            )
+        else:
+            print(f"  ✓ 净利润合理：{np_c:.2f}亿 < {pe:.2f}亿")
+
+    # 校验3：母公司 vs 合并净利润差异预警
+    if np_c and np_p:
+        diff_pct = abs(np_c - np_p) / max(np_c, np_p)
+        if diff_pct > 0.3:
+            warnings.append(
+                f"合并净利润({np_c:.2f}亿) 与母公司净利润({np_p:.2f}亿) 差异{diff_pct:.1%}，"
+                f"请确认使用合并口径({np_c:.2f}亿)"
+            )
+
+    # 校验4：负债率不得超过80%
+    if ta and tl:
+        ratio = tl / ta
+        if ratio > 0.8:
+            errors.append(
+                f"负债合计({tl:.2f}亿)占总资产({ta:.2f}亿)的{ratio:.1%}，"
+                f"超过80%上限，可能OCR把股东权益误读为负债"
+            )
+        else:
+            print(f"  ✓ 负债率合理：{ratio:.1%}")
+
+    # 校验5：少数股东权益 + 归母权益 ≈ 股东权益合计
+    if pe and me and te:
+        diff = abs(pe + me - te)
+        if diff > te * 0.01:
+            warnings.append(
+                f"归母权益({pe:.2f}) + 少数股东({me:.2f}) = {pe+me:.2f} ≠ 权益合计({te:.2f})，差额{diff:.2f}亿"
+            )
+
+    if errors:
+        print(f"\n  🚨 {len(errors)} 个严重错误：")
+        for e in errors: print(f"     ❌ {e}")
+    if warnings:
+        print(f"\n  ⚠️  {len(warnings)} 个警告：")
+        for w in warnings: print(f"     ⚠️ {w}")
+    if not errors and not warnings:
+        print(f"  ✅ 全部校验通过")
+
+    return {"errors": errors, "warnings": warnings, "extracted": data}
+
+
+def format_validation_report(validation: dict) -> str:
+    """将校验结果格式化为注入DeepSeek prompt的文字块"""
+    extracted = validation.get("extracted", {})
+    errors = validation.get("errors", [])
+    warnings = validation.get("warnings", [])
+
+    lines = ["## OCR数据校验结果（Step1.5自动生成）", ""]
+    if extracted:
+        lines.append("### 关键数字（已校验，DeepSeek请以此为准）")
+        fields = [
+            ("total_assets",            "总资产（亿元）"),
+            ("total_liabilities",       "负债合计（亿元）"),
+            ("total_equity",            "股东权益合计（亿元）"),
+            ("parent_equity",           "归母净资产（亿元）"),
+            ("minority_equity",         "少数股东权益（亿元）"),
+            ("net_profit_consolidated", "归母净利润-合并口径（亿元）⭐估值请使用此值"),
+            ("net_profit_parent",       "净利润-母公司口径（亿元，仅供参考）"),
+            ("total_shares",            "总股本（亿股）"),
+        ]
+        for key, label in fields:
+            val = extracted.get(key)
+            lines.append(f"- {label}：{'⚠️未找到' if val is None else val}")
+        lines.append("")
+
+    if errors:
+        lines.append("### 🚨 严重错误（估值前必须修正）")
+        for e in errors: lines.append(f"- ❌ {e}")
+        lines.append("")
+        lines.append("> **DeepSeek执行指令**：请在报告开头列「数据修正说明」，")
+        lines.append("> 以OCR校验结果数字为准，不得使用原始错误值继续计算。")
+        lines.append("")
+
+    if warnings:
+        lines.append("### ⚠️ 警告")
+        for w in warnings: lines.append(f"- {w}")
+        lines.append("")
+
+    if not errors and not warnings:
+        lines.append("### ✅ 全部校验通过，数据可信")
+        lines.append("")
+
+    return "\n".join(lines)
+
 def load_report_md(report_md_path: str) -> str:
     """从外部传入的研报倍数md文件读取内容"""
     path = Path(report_md_path)
@@ -442,6 +604,15 @@ def run_valuation(code: str, stock_name: str, report_year: str,
     raw_path.write_text(financial_data, encoding="utf-8")
     print(f"识别结果已保存: {raw_path}")
 
+    # Step1.5: OCR数据校验
+    deepseek_client = get_deepseek_client()
+    validation = validate_ocr_data(financial_data, deepseek_client)
+    validation_report = format_validation_report(validation)
+
+    # 有严重错误时警告，但不中断（让DeepSeek在报告里修正并说明）
+    if validation["errors"]:
+        print(f"\n  ⚠️  检测到OCR读取错误，已注入修正指令到DeepSeek prompt，估值报告将包含数据修正说明。")
+
     # Step2: 读取研报倍数（优先用外部传入md，否则自行下载）
     print(f"\n--- Step2: 获取研报估值倍数 ---")
     if report_md:
@@ -453,7 +624,7 @@ def run_valuation(code: str, stock_name: str, report_year: str,
 
     # Step3: DeepSeek跑双轨估值
     print(f"\n--- Step3: DeepSeek双轨估值分析 ---")
-    client = get_deepseek_client()
+    client = deepseek_client  # 复用Step1.5已创建的client
 
     user_text = f"""标的：{stock_name}（{code}）
 报告期：{report_year}年报
@@ -462,6 +633,10 @@ def run_valuation(code: str, stock_name: str, report_year: str,
 以下是从截图中提取的所有财务数据：
 
 {financial_data}
+
+---
+
+{validation_report}
 
 ---
 
