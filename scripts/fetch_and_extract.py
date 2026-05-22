@@ -146,7 +146,7 @@ def main():
         end_date.strftime("%Y-%m-%d")
     )
 
-    pdf_files = list(REPORTS_DIR.glob("*.pdf"))
+    pdf_files = list(REPORTS_DIR.glob("**/*.pdf"))
     if not pdf_files:
         print("⚠️  未找到PDF，下载可能失败")
         output = OUTPUT_DIR / f"{args.code}_valuation.md"
