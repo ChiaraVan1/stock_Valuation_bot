@@ -1,4 +1,4 @@
-name: 双轨估值分析
+name: 双轨估值分析（完整流程）
 
 on:
   workflow_dispatch:
@@ -14,22 +14,32 @@ on:
       report_year:
         description: '报告年度（如 2025）'
         required: true
+        default: '2025'
         type: string
-      current_price:
+      stock_price:
         description: '当前股价（可不填，从截图自动读取）'
         required: false
         default: ''
         type: string
       months:
-        description: '查询研报月数'
+        description: '查询近几个月研报'
         required: false
-        default: '12'
+        default: '3'
+        type: string
+      max_reports:
+        description: '最多分析几篇研报'
+        required: false
+        default: '10'
         type: string
 
 jobs:
-  valuation:
+  # ── Job 1：下载研报 + 提取估值倍数 ──────────────────────
+  fetch-reports:
+    name: Step1 研报获取与倍数提取
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
+    outputs:
+      report_md_artifact_id: ${{ steps.upload.outputs.artifact-id }}
 
     steps:
       - name: 签出代码
@@ -45,7 +55,61 @@ jobs:
           pip install -r requirements.txt
           pip install eastmoney-master/
 
-      - name: 运行双轨估值
+      - name: 运行研报提取脚本
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python scripts/fetch_and_extract.py \
+            --code ${{ github.event.inputs.stock_code }} \
+            --months ${{ github.event.inputs.months }} \
+            --max-reports ${{ github.event.inputs.max_reports }}
+
+      - name: 预览研报倍数结果
+        run: |
+          echo "=== 研报倍数汇总 ==="
+          cat output/${{ github.event.inputs.stock_code }}_valuation.md
+
+      - name: 上传研报倍数文件
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-md-${{ github.event.inputs.stock_code }}-${{ github.run_id }}
+          path: output/${{ github.event.inputs.stock_code }}_valuation.md
+          retention-days: 7
+
+  # ── Job 2：读取截图 + 串入研报倍数 + DeepSeek估值 ───────
+  run-valuation:
+    name: Step2 双轨估值分析
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: fetch-reports  # 依赖 Job1 完成
+
+    steps:
+      - name: 签出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: |
+          pip install -r requirements.txt
+          pip install eastmoney-master/
+
+      - name: 下载 Job1 产出的研报倍数文件
+        uses: actions/download-artifact@v4
+        with:
+          name: report-md-${{ github.event.inputs.stock_code }}-${{ github.run_id }}
+          path: output/
+
+      - name: 确认研报倍数文件存在
+        run: |
+          echo "=== 研报倍数文件内容 ==="
+          cat output/${{ github.event.inputs.stock_code }}_valuation.md
+
+      - name: 运行双轨估值分析
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
@@ -54,11 +118,20 @@ jobs:
             --code ${{ github.event.inputs.stock_code }} \
             --name "${{ github.event.inputs.stock_name }}" \
             --year ${{ github.event.inputs.report_year }} \
-            --months ${{ github.event.inputs.months }}
+            --price "${{ github.event.inputs.stock_price }}" \
+            --months ${{ github.event.inputs.months }} \
+            --max-reports ${{ github.event.inputs.max_reports }} \
+            --report-md output/${{ github.event.inputs.stock_code }}_valuation.md
 
-      - name: 上传估值报告
+      - name: 上传完整估值报告
         uses: actions/upload-artifact@v4
         with:
-          name: 估值报告-${{ github.event.inputs.stock_code }}-${{ github.run_id }}
+          name: valuation-${{ github.event.inputs.stock_code }}-${{ github.run_id }}
           path: output/
-          retention-days: 90
+          retention-days: 30
+
+      - name: 输出报告预览
+        run: |
+          REPORT=$(ls output/${{ github.event.inputs.stock_code }}_*_估值报告.md | head -1)
+          echo "=== 估值报告预览（前100行）==="
+          head -100 "$REPORT"
