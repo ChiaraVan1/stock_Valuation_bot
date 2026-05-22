@@ -358,7 +358,7 @@ def validate_ocr_data(financial_data: str, client) -> dict:
     print("\n--- Step1.5: OCR数据校验 ---")
 
     resp = client.chat.completions.create(
-        model="deepseek-chat",
+        model="deepseek-v3.2",
         max_tokens=400,
         temperature=0,
         messages=[
@@ -541,7 +541,7 @@ def download_reports(code: str, months: int, max_reports: int) -> str:
             text = text[:10000]
 
             resp = client.chat.completions.create(
-                model="deepseek-chat",
+                model="deepseek-v3.2",
                 max_tokens=300,
                 temperature=0,
                 messages=[
@@ -646,7 +646,7 @@ def run_valuation(code: str, stock_name: str, report_year: str,
 请根据以上数据完成完整的双轨估值分析。"""
 
     response = client.chat.completions.create(
-        model="deepseek-chat",
+        model="deepseek-v4-pro",
         max_tokens=8000,
         temperature=0.1,
         messages=[
