@@ -23,7 +23,7 @@ def get_client():
 
 def download_reports(code, count, begin, end):
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"\n⬇️  下载研报 PDF（最多{count}篇）...")
+    print(f"⬇️ 开始下载研报，股票代码: {code}，最多{count}篇")
     cmd = [
         "python", "-m", "eastmoney", "d",
         "-t", "stock",
@@ -33,13 +33,19 @@ def download_reports(code, count, begin, end):
         "--begin", begin,
         "--end", end,
     ]
-    print(f"   执行命令: {' '.join(cmd)}")
+    print(f"执行命令: {' '.join(cmd)}")
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    print("=== 下载输出 ===")
     print(result.stdout)
-    if result.returncode != 0:
-        print(f"⚠️  下载错误: {result.stderr}")
-    else:
-        print(f"✅ 下载完成")
+    if result.stderr:
+        print("=== 下载错误 ===")
+        print(result.stderr)
+    print(f"下载退出码: {result.returncode}")
+
+    all_pdfs = list(REPORTS_DIR.glob("**/*.pdf"))
+    print(f"下载后找到PDF数量: {len(all_pdfs)}")
+    for p in all_pdfs:
+        print(f"  - {p}")
     return REPORTS_DIR
 
 def extract_pdf_text(pdf_path, max_pages=30):
@@ -105,7 +111,7 @@ def generate_markdown_table(results, code):
     ]
     valid = [r for r in results if "error" not in r]
     if not valid:
-        lines.append("| — | 未找到有效数据 | — | — | — | — | — | — | — | — | [fallback-无研报] |")
+        lines.append("| — | 未找到有效数据 | — | — | — | — | — | — | — | [fallback-无研报] |")
     else:
         for r in valid:
             pe = r.get("pe_range") or [None, None]
@@ -130,16 +136,19 @@ def generate_markdown_table(results, code):
     return "\n".join(lines)
 
 def main():
+    print("🚀 脚本启动")
     parser = argparse.ArgumentParser()
     parser.add_argument("--code", required=True)
     parser.add_argument("--months", type=int, default=12)
     parser.add_argument("--max-reports", type=int, default=10)
     args = parser.parse_args()
+    print(f"参数: code={args.code}, months={args.months}, max_reports={args.max_reports}")
 
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     end_date = datetime.now()
     begin_date = end_date - timedelta(days=args.months * 30)
+
     download_reports(
         args.code, args.max_reports,
         begin_date.strftime("%Y-%m-%d"),
@@ -147,14 +156,38 @@ def main():
     )
 
     pdf_files = list(REPORTS_DIR.glob("**/*.pdf"))
+    print(f"找到 {len(pdf_files)} 个PDF待分析")
+
     if not pdf_files:
-        print("⚠️  未找到PDF，下载可能失败")
-        output = OUTPUT_DIR / f"{args.code}_valuation.md"
-        output.write_text(f"[fallback-无研报] {args.code} 未下载到研报", encoding="utf-8")
+        print("未找到PDF，下载可能失败")
+        out = OUTPUT_DIR / f"{args.code}_valuation.md"
+        out.write_text(f"[fallback-无研报] {args.code} 未下载到研报", encoding="utf-8")
         return
 
-    print(f"\n🤖 DeepSeek分析（共{len(pdf_files)}个PDF）...")
+    print(f"🤖 开始DeepSeek分析...")
     client = get_client()
     results = []
+
     for i, pdf_path in enumerate(pdf_files[:args.max_reports]):
-        print(f"   [{i+1}/{len(pdf_files)}] {pdf_path.name}")
+        print(f"[{i+1}/{len(pdf_files)}] 处理: {pdf_path.name}")
+        text = extract_pdf_text(pdf_path)
+        print(f"  提取文字长度: {len(text)} 字符")
+        result = extract_valuation(text, client)
+        results.append(result)
+        if "error" in result:
+            print(f"  ⚠️ 提取失败: {result['error']}")
+        else:
+            print(f"  ✅ {result.get('broker')} | PE:{result.get('pe_range')} | 目标价:{result.get('target_price')}")
+
+    markdown = generate_markdown_table(results, args.code)
+    out = OUTPUT_DIR / f"{args.code}_valuation.md"
+    out.write_text(markdown, encoding="utf-8")
+    (OUTPUT_DIR / f"{args.code}_raw.json").write_text(
+        json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"\n✅ 全部完成！输出: {out}")
+    print("\n--- 复制到Claude对话 ---\n")
+    print(markdown)
+
+if __name__ == "__main__":
+    main()
