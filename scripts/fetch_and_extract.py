@@ -157,4 +157,4 @@ def main():
     client = get_client()
     results = []
     for i, pdf_path in enumerate(pdf_files[:args.max_reports]):
-        print(f"   [{i+1}/{len(pdf_files)
+        print(f"   [{i+1}/{len(pdf_files)}] {pdf_path.name}")
