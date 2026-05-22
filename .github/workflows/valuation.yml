@@ -1,0 +1,49 @@
+name: 双轨估值分析
+
+on:
+  workflow_dispatch:
+    inputs:
+      stock_code:
+        description: '股票代码（如 002223）'
+        required: true
+      stock_name:
+        description: '股票名称（如 鱼跃医疗）'
+        required: true
+      report_year:
+        description: '报告年度（如 2025）'
+        required: true
+      current_price:
+        description: '当前股价（如 29.08）'
+        required: true
+      months:
+        required: false
+        default: '12'
+
+jobs:
+  valuation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 安装依赖
+        run: |
+          pip install -r requirements.txt
+          pip install eastmoney-master/
+      - name: 运行双轨估值
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python scripts/valuation.py \
+            --code ${{ github.event.inputs.stock_code }} \
+            --name "${{ github.event.inputs.stock_name }}" \
+            --year ${{ github.event.inputs.report_year }} \
+            --price ${{ github.event.inputs.current_price }} \
+            --months ${{ github.event.inputs.months }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 估值报告-${{ github.event.inputs.stock_code }}
+          path: output/
+          retention-days: 90
