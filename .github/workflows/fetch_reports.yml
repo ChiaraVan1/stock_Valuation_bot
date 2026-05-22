@@ -33,7 +33,9 @@ jobs:
           python-version: '3.11'
 
       - name: 安装依赖
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install libs/eastmoney/
 
       - name: 运行提取脚本
         env:
