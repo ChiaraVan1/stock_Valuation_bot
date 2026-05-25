@@ -31,6 +31,11 @@ on:
         required: false
         default: '10'
         type: string
+      dry_run:
+        description: '预览模式（不推送微信）'
+        required: false
+        default: 'false'
+        type: string
 
 jobs:
   # ── Job 1：下载研报 + 提取估值倍数 ──────────────────────
@@ -77,12 +82,12 @@ jobs:
           path: output/${{ github.event.inputs.stock_code }}_valuation.md
           retention-days: 7
 
-  # ── Job 2：读取截图 + 串入研报倍数 + DeepSeek估值 ───────
+  # ── Job 2：读取截图 + 串入研报倍数 + 估值 + 推送微信 ────
   run-valuation:
     name: Step2 双轨估值分析
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: fetch-reports  # 依赖 Job1 完成
+    needs: fetch-reports
 
     steps:
       - name: 签出代码
@@ -135,3 +140,13 @@ jobs:
           REPORT=$(ls output/${{ github.event.inputs.stock_code }}_*_估值报告.md | head -1)
           echo "=== 估值报告预览（前100行）==="
           head -100 "$REPORT"
+
+      - name: 推送估值摘要到微信
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          SCT_KEY: ${{ secrets.SCT_KEY }}
+        run: |
+          python scripts/push_fangtang.py \
+            --code ${{ github.event.inputs.stock_code }} \
+            --name "${{ github.event.inputs.stock_name }}" \
+            --price "${{ github.event.inputs.stock_price }}"
