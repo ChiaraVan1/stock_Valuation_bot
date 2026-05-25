@@ -63,6 +63,8 @@ jobs:
       - name: 运行研报提取脚本
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}   
         run: |
           python scripts/fetch_and_extract.py \
             --code ${{ github.event.inputs.stock_code }} \
@@ -118,6 +120,7 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}   # 加这行
         run: |
           python scripts/valuation.py \
             --code ${{ github.event.inputs.stock_code }} \
