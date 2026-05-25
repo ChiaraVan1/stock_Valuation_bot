@@ -64,7 +64,7 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}   
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
         run: |
           python scripts/fetch_and_extract.py \
             --code ${{ github.event.inputs.stock_code }} \
@@ -116,11 +116,32 @@ jobs:
           echo "=== 研报倍数文件内容 ==="
           cat output/${{ github.event.inputs.stock_code }}_valuation.md
 
+      # ── 可选入口提示（有就列出，没有就跳过，不报错）──
+      - name: 检查可选入口文件
+        run: |
+          echo "=== 可选入口检查 ==="
+
+          MANUAL_DIR="manual_reports/${{ github.event.inputs.stock_code }}"
+          if [ -d "$MANUAL_DIR" ] && [ -n "$(ls -A $MANUAL_DIR 2>/dev/null)" ]; then
+            echo "✅ 手动研报：找到 $(ls $MANUAL_DIR | wc -l) 个文件"
+            ls $MANUAL_DIR
+          else
+            echo "ℹ️  手动研报：未找到（跳过，不影响分析）"
+          fi
+
+          QUARTERLY_DIR="quarterly_reports/${{ github.event.inputs.stock_code }}"
+          if [ -d "$QUARTERLY_DIR" ] && [ -n "$(ls -A $QUARTERLY_DIR 2>/dev/null)" ]; then
+            echo "✅ 季报文件：找到 $(ls $QUARTERLY_DIR | wc -l) 个文件"
+            ls $QUARTERLY_DIR
+          else
+            echo "ℹ️  季报文件：未找到（跳过，不影响分析）"
+          fi
+
       - name: 运行双轨估值分析
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}   # 加这行
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
         run: |
           python scripts/valuation.py \
             --code ${{ github.event.inputs.stock_code }} \
