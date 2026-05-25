@@ -294,7 +294,7 @@ def get_qwen_client():
 
 # ── 新增：结构化输入文件 ──────────────────────────────────
 
-def load_input_json(code: str, input_file: str = "") -> dict:
+def load_input_json(code: str, input_file: str = "", name: str = "") -> dict:
     """
     加载结构化输入文件。
     优先使用 --input-file 指定路径，否则自动查找 input/{code}.json。
@@ -645,7 +645,7 @@ def run_valuation(code: str, stock_name: str, report_year: str,
 
     # Step0: 加载结构化输入文件（若存在）
     print(f"\n--- Step0: 加载结构化输入文件 ---")
-    input_data = load_input_json(code, input_file)
+    input_data = load_input_json(code, input_file, stock_name)
     input_override = format_input_override(input_data)
 
     # Step1: 千问VL读取截图
