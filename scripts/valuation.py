@@ -674,7 +674,13 @@ def run_valuation(
 报告期：{report_year}年报
 当前股价：{"请从截图中读取" if not price else price + " 元"}
 
-以上截图包含年报财务数据，请直接从图片中读取所有数字，不要推测或捏造任何数据。
+⚠️ 重要提示：年报原始数据单位为"元"，换算时注意：
+- 亿元 = 原始数值 ÷ 100,000,000（除以1亿）
+- 例：5,788,501,676 元 = 5.79亿元，不是57.89亿元
+- 换算后请做合理性检验
+
+以上截图包含年报财务数据，请直接从图片中读取所有数字，不要推测或捏造任何数据。请输出完整报告，使用紧凑格式：表格数字保留2位小数，文字说明简洁，不重复已知信息。
+确保轨道一、轨道二、交叉验证、估值局限性、风险提示五个部分全部输出完整。
 
 ---
 
@@ -700,7 +706,7 @@ def run_valuation(
 
     resp = client.chat.completions.create(
         model=CLAUDE_MODEL,
-        max_tokens=8000,
+        max_tokens=16000,
         temperature=0.1,
         messages=[
             {"role": "system", "content": VALUATION_PROMPT},
