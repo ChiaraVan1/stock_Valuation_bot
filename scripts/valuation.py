@@ -303,7 +303,8 @@ def load_input_json(code: str, input_file: str = "") -> dict:
     candidates = []
     if input_file:
         candidates.append(Path(input_file))
-    candidates.append(INPUT_DIR / f"{code}.json")
+    candidates.append(DOCS_DIR / code / f"{code}.json")
+    candidates.append(DOCS_DIR / name / f"{name}.json")
 
     for path in candidates:
         if path.exists():
