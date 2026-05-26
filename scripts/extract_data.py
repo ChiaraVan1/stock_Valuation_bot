@@ -38,7 +38,7 @@ def _get_extraction_rules() -> str:
 
 EXTRACT_SYSTEM = "只输出JSON，不输出任何其他文字、解释或Markdown代码块。"
 
-EXTRACT_PROMPT = """你是A股财务数据提取专员。从以下年报截图中提取所有财务数据，输出严格JSON。
+EXTRACT_PROMPT = f"""你是A股财务数据提取专员。从以下年报截图中提取所有财务数据，输出严格JSON。
 
 ---
 
