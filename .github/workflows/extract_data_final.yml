@@ -1,0 +1,63 @@
+name: Workflow 3 — 传图提取财务数据
+
+on:
+  workflow_dispatch:
+    inputs:
+      stock_code:
+        description: '股票代码（如 002223）'
+        required: true
+        type: string
+      stock_name:
+        description: '股票名称（如 鱼跃医疗）'
+        required: true
+        type: string
+      report_year:
+        description: '报告年度（如 2025）'
+        required: true
+        default: '2025'
+        type: string
+      stock_price:
+        description: '当前股价（可不填）'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  extract-data:
+    name: 传图 → Claude → 财务数据JSON
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 签出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 提取财务数据
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          python scripts/extract_data.py \
+            --code ${{ github.event.inputs.stock_code }} \
+            --name "${{ github.event.inputs.stock_name }}" \
+            --year ${{ github.event.inputs.report_year }} \
+            --price "${{ github.event.inputs.stock_price }}"
+
+      - name: 预览提取结果
+        run: |
+          echo "=== 财务数据JSON预览 ==="
+          cat output/${{ github.event.inputs.stock_code }}_data.json
+
+      - name: 上传财务数据JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-${{ github.event.inputs.stock_code }}-${{ github.run_id }}
+          path: output/${{ github.event.inputs.stock_code }}_data.json
+          retention-days: 7

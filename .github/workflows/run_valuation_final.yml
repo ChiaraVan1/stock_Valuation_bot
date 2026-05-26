@@ -1,0 +1,108 @@
+name: Workflow 4 — Claude 估值
+
+on:
+  workflow_dispatch:
+    inputs:
+      stock_code:
+        description: '股票代码（如 002223）'
+        required: true
+        type: string
+      stock_name:
+        description: '股票名称（如 鱼跃医疗）'
+        required: true
+        type: string
+      stock_price:
+        description: '当前股价（可不填）'
+        required: false
+        default: ''
+        type: string
+      run_id_wf1:
+        description: 'Workflow 1 的 run_id（研报倍数）'
+        required: false
+        default: ''
+        type: string
+      run_id_wf2:
+        description: 'Workflow 2 的 run_id（校验报告，可不填）'
+        required: false
+        default: ''
+        type: string
+      run_id_wf3:
+        description: 'Workflow 3 的 run_id（财务数据JSON）'
+        required: true
+        type: string
+      dry_run:
+        description: '预览模式（不推送微信）'
+        required: false
+        default: 'false'
+        type: string
+
+jobs:
+  run-valuation:
+    name: 读JSON → Claude估值 → 报告
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 签出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 下载财务数据JSON（Workflow 3产出）
+        uses: actions/download-artifact@v4
+        with:
+          name: data-${{ github.event.inputs.stock_code }}-${{ github.event.inputs.run_id_wf3 }}
+          path: output/
+
+      - name: 下载研报倍数（Workflow 1产出，可选）
+        if: ${{ github.event.inputs.run_id_wf1 != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: report-md-${{ github.event.inputs.stock_code }}-${{ github.event.inputs.run_id_wf1 }}
+          path: output/
+        continue-on-error: true
+
+      - name: 下载校验报告（Workflow 2产出，可选）
+        if: ${{ github.event.inputs.run_id_wf2 != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: validation-${{ github.event.inputs.stock_code }}-${{ github.event.inputs.run_id_wf2 }}
+          path: output/
+        continue-on-error: true
+
+      - name: 运行估值
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          python scripts/run_valuation.py \
+            --code ${{ github.event.inputs.stock_code }} \
+            --price "${{ github.event.inputs.stock_price }}"
+
+      - name: 输出报告预览
+        run: |
+          REPORT=$(ls output/${{ github.event.inputs.stock_code }}_*_估值报告.md | head -1)
+          echo "=== 估值报告预览（前100行）==="
+          head -100 "$REPORT"
+
+      - name: 上传估值报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: valuation-${{ github.event.inputs.stock_code }}-${{ github.run_id }}
+          path: output/${{ github.event.inputs.stock_code }}_*_估值报告.md
+          retention-days: 30
+
+      - name: 推送估值摘要到微信
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          SCT_KEY: ${{ secrets.SCT_KEY }}
+        run: |
+          python scripts/push_fangtang.py \
+            --code ${{ github.event.inputs.stock_code }} \
+            --name "${{ github.event.inputs.stock_name }}" \
+            --price "${{ github.event.inputs.stock_price }}"

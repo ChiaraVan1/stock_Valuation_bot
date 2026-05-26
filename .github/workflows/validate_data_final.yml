@@ -1,0 +1,55 @@
+name: Workflow 2 — 链路层校验
+
+on:
+  workflow_dispatch:
+    inputs:
+      stock_code:
+        description: '股票代码（如 002223）'
+        required: true
+        type: string
+      run_id_wf3:
+        description: 'Workflow 3 的 run_id（用于下载 artifact）'
+        required: true
+        type: string
+
+jobs:
+  validate:
+    name: 读JSON → 链路层校验
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 签出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 下载 Workflow 3 的财务数据JSON
+        uses: actions/download-artifact@v4
+        with:
+          name: data-${{ github.event.inputs.stock_code }}-${{ github.event.inputs.run_id_wf3 }}
+          path: output/
+
+      - name: 确认JSON文件存在
+        run: |
+          echo "=== 财务数据JSON ==="
+          cat output/${{ github.event.inputs.stock_code }}_data.json
+
+      - name: 运行链路层校验
+        run: |
+          python scripts/validate_data.py \
+            --code ${{ github.event.inputs.stock_code }}
+
+      - name: 上传校验报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-${{ github.event.inputs.stock_code }}-${{ github.run_id }}
+          path: output/${{ github.event.inputs.stock_code }}_validation_report.txt
+          retention-days: 7
